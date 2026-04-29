@@ -1,0 +1,83 @@
+# Constellation Project Blueprint
+# Generated: 2026-04-29
+# Use with: /constellation
+project:
+  name: AFRI-HUB
+  description: Plateforme Multi-Pays Pour Services En Afrique
+  outputDir: C:\Users\USER/projects/AFRI-HUB
+  mode: new
+  monorepo:
+    enabled: false
+    tool: null
+stack:
+  frontend:
+    framework: react
+    version: 19.2.5
+    language: typescript
+    css: null
+    buildTool: null
+    stateManagement: null
+    packageManager: npm
+    linter: eslint
+  backend:
+    framework: express
+    version: 5.2.1
+    language: typescript
+    runtime: node
+    packageManager: npm
+    linter: eslint
+  database:
+    primary: mongodb
+    orm: null
+    cache: null
+  infrastructure:
+    containerization: docker
+    orchestration: null
+    cicd: null
+    cloud: null
+    cloudDeployModel: null
+  testing:
+    unit: null
+    e2e: null
+    api: null
+  monitoring:
+    observability: null
+    logging: null
+    errorTracking: null
+  security:
+    enabled: true
+versions:
+  react: 19.2.5
+  express: 5.2.1
+  mongodb: 8.0.0
+  docker: 27.0.0
+generation:
+  sampleCrud: true
+  crudEntity: Item
+  crudFields:
+    - name: title
+      type: string
+      required: true
+    - name: description
+      type: string
+      required: false
+    - name: completed
+      type: boolean
+      default: false
+  features:
+    - cors
+    - healthCheck
+    - errorHandling
+    - envConfig
+  docker:
+    multiStage: true
+    compose: true
+  ci:
+    lint: false
+    test: false
+    build: false
+    deploy: false
+
+github:
+  mode: new
+  repoName: AFRI-HUB
