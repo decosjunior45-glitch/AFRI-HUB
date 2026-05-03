@@ -1,0 +1,35 @@
+{
+  "name": "afri-hub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plateforme Multi-Pays Pour Services En Afrique",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "lint": "eslint . --ext .ts",
+    "prepare": "npm --prefix client install"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.0",
+    "mongodb": "^6.5.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.19",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/node": "^20.14.2",
+    "@typescript-eslint/eslint-plugin": "^7.10.2",
+    "@typescript-eslint/parser": "^7.10.2",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.30.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.4"
+  }
+}
