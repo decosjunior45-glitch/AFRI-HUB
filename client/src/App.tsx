@@ -216,7 +216,7 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const hostname = window.location.hostname.toLowerCase();
-  const isRootHost = hostname === "afri-hub.localhost" || hostname === "localhost" || hostname === "127.0.0.1";
+  const isRootHost = hostname === "afri-hub.localhost" || hostname === "localhost" || hostname === "127.0.0.1" || hostname === "afri-hub.com" || hostname === "www.afri-hub.com" || hostname.endsWith(".vercel.app");
   const portSuffix = window.location.port ? `:${window.location.port}` : "";
 
   useEffect(() => {
