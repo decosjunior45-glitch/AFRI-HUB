@@ -5,7 +5,7 @@ import ItemManager from "./components/ItemManager";
 import { useAuth, FLAG_MAP } from "./contexts/AuthContext";
 import AnnouncementsPanel from "./components/AnnouncementsPanel";
 
-const apiBaseUrl = `http://${window.location.hostname}:4000/api`;
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:4000/api`;
 
 interface Country { code: string; name: string; flag: string; phoneCode: string; }
 
