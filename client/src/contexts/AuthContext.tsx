@@ -68,6 +68,15 @@ function buildApiBaseUrl(): string {
   return `http://${window.location.hostname}:4000/api`;
 }
 
+// ✅ Helpers pour stocker les tokens par pays — chaque pays a sa propre session
+function getTokenStorageKey(countryCode: string): string {
+  return `authToken_${countryCode}`;
+}
+
+function getUserStorageKey(countryCode: string): string {
+  return `authUser_${countryCode}`;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -90,15 +99,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err) { console.warn("Erreur pays:", err); }
   };
 
+  // ✅ Au chargement : lire UNIQUEMENT le token du pays courant
   useEffect(() => {
-    const storedToken = localStorage.getItem("authToken");
-    const storedUser = localStorage.getItem("authUser");
-    if (storedToken && storedUser) {
-      try { setToken(storedToken); setUser(JSON.parse(storedUser)); }
-      catch { localStorage.removeItem("authToken"); localStorage.removeItem("authUser"); }
+    // Pas de pays détecté → pas d'authentification (ex: page d'accueil afri-hub.com)
+    if (!detectedCountryCode) {
+      setToken(null);
+      setUser(null);
+      return;
     }
+
+    // ✅ Migration : si on trouve l'ancien format "authToken" (sans pays), on le migre
+    const legacyToken = localStorage.getItem("authToken");
+    const legacyUser = localStorage.getItem("authUser");
+    if (legacyToken && legacyUser) {
+      try {
+        const userData = JSON.parse(legacyUser);
+        // L'ancien token appartient probablement au pays de l'utilisateur stocké
+        const legacyCountry = userData.countryCode;
+        if (legacyCountry) {
+          localStorage.setItem(getTokenStorageKey(legacyCountry), legacyToken);
+          localStorage.setItem(getUserStorageKey(legacyCountry), legacyUser);
+        }
+      } catch {}
+      // On supprime l'ancien format dans tous les cas
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("authUser");
+    }
+
+    // ✅ Lire le token spécifique au pays courant
+    const storedToken = localStorage.getItem(getTokenStorageKey(detectedCountryCode));
+    const storedUser = localStorage.getItem(getUserStorageKey(detectedCountryCode));
+    if (storedToken && storedUser) {
+      try {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      } catch {
+        localStorage.removeItem(getTokenStorageKey(detectedCountryCode));
+        localStorage.removeItem(getUserStorageKey(detectedCountryCode));
+      }
+    } else {
+      // Pas de session pour ce pays → utilisateur déconnecté sur cette page
+      setToken(null);
+      setUser(null);
+    }
+
     fetchCurrentCountry();
-  }, []);
+  }, [detectedCountryCode]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true); setError(null);
@@ -110,8 +156,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!response.ok) { const e = await response.json(); throw new Error(e.error || "Erreur connexion"); }
       const data: AuthResponse = await response.json();
       setToken(data.token); setUser(data.user);
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("authUser", JSON.stringify(data.user));
+      // ✅ Sauvegarder le token sous une clé spécifique au pays
+      const countryKey = data.user.countryCode || detectedCountryCode || "unknown";
+      localStorage.setItem(getTokenStorageKey(countryKey), data.token);
+      localStorage.setItem(getUserStorageKey(countryKey), JSON.stringify(data.user));
     } catch (err) { const message = err instanceof Error ? err.message : "Erreur réseau"; setError(message); throw err; }
     finally { setIsLoading(false); }
   };
@@ -126,15 +174,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!response.ok) { const e = await response.json(); throw new Error(e.error || "Erreur inscription"); }
       const data: AuthResponse = await response.json();
       setToken(data.token); setUser(data.user);
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("authUser", JSON.stringify(data.user));
+      // ✅ Sauvegarder le token sous une clé spécifique au pays
+      const countryKey = data.user.countryCode || detectedCountryCode || "unknown";
+      localStorage.setItem(getTokenStorageKey(countryKey), data.token);
+      localStorage.setItem(getUserStorageKey(countryKey), JSON.stringify(data.user));
     } catch (err) { const message = err instanceof Error ? err.message : "Erreur réseau"; setError(message); throw err; }
     finally { setIsLoading(false); }
   };
 
+  // ✅ Déconnexion : ne supprime QUE le token du pays courant
   const logout = () => {
     setUser(null); setToken(null); setError(null);
-    localStorage.removeItem("authToken"); localStorage.removeItem("authUser");
+    if (detectedCountryCode) {
+      localStorage.removeItem(getTokenStorageKey(detectedCountryCode));
+      localStorage.removeItem(getUserStorageKey(detectedCountryCode));
+    }
+    // On supprime aussi l'ancien format au cas où
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("authUser");
   };
 
   const clearError = () => setError(null);
