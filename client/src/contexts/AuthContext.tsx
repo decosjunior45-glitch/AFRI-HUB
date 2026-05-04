@@ -36,12 +36,32 @@ export const FLAG_MAP: Record<string, string> = {
   ma: "🇲🇦", dz: "🇩🇿", tn: "🇹🇳", ly: "🇱🇾", eg: "🇪🇬",
 };
 
+// ✅ Liste des codes pays valides (pour validation du path en production)
+const VALID_COUNTRY_CODES = Object.keys(FLAG_MAP);
+
 function getCountryCodeFromHostname(): string | null {
   const hostname = window.location.hostname.toLowerCase();
-  const rootHosts = ["localhost", "afri-hub.localhost", "127.0.0.1"];
-  if (rootHosts.includes(hostname)) return null;
-  const match = hostname.match(/^([a-z0-9-]+)\.localhost/) || hostname.match(/^([a-z0-9-]+)\.afri-hub/);
-  return match ? match[1] : null;
+
+  // ✅ EN LOCAL : détecte depuis le sous-domaine (comportement existant)
+  const localRootHosts = ["localhost", "afri-hub.localhost", "127.0.0.1"];
+  if (localRootHosts.includes(hostname)) return null;
+
+  const localMatch = hostname.match(/^([a-z0-9-]+)\.localhost/) || hostname.match(/^([a-z0-9-]+)\.afri-hub\.localhost/);
+  if (localMatch) return localMatch[1];
+
+  // ✅ EN PRODUCTION : détecte depuis le pathname (/sn, /ml, /ci...)
+  const isProdHost = hostname === "afri-hub.com" || hostname === "www.afri-hub.com" || hostname.endsWith(".vercel.app");
+  if (isProdHost) {
+    const pathname = window.location.pathname;
+    const pathParts = pathname.split("/").filter(Boolean);
+    const firstPart = pathParts[0]?.toLowerCase();
+    if (firstPart && VALID_COUNTRY_CODES.includes(firstPart)) {
+      return firstPart;
+    }
+    return null;
+  }
+
+  return null;
 }
 
 function buildApiBaseUrl(): string {

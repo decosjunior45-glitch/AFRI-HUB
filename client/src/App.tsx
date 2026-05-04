@@ -66,6 +66,32 @@ const CULTURE: Record<string, { capital: string; population: string; currency: s
   eg: { capital:"Le Caire",     population:"104M", currency:"Livre (EGP)",     languages:["Arabe","Copte"],                         dishes:["Kushari","Ful medames","Molokheyya"],      ethnicities:["Égyptiens","Nubiens"],                 tagline:"Mère du monde — Umm al-Dunia",            region:"Afrique du Nord" },
 };
 
+// ✅ Helpers : détecter si on est en production et construire les URL
+function isProductionHost(hostname: string): boolean {
+  return hostname === "afri-hub.com" || hostname === "www.afri-hub.com" || hostname.endsWith(".vercel.app");
+}
+
+function buildCountryUrl(countryCode: string): string {
+  const hostname = window.location.hostname.toLowerCase();
+  const port = window.location.port ? `:${window.location.port}` : "";
+  // ✅ EN PRODUCTION : /sn, /ml, /ci...
+  if (isProductionHost(hostname)) {
+    return `${window.location.protocol}//${hostname}/${countryCode}`;
+  }
+  // ✅ EN LOCAL : senegal.localhost:5173 (comportement existant)
+  return `${window.location.protocol}//${countryCode}.localhost${port}`;
+}
+
+function buildHomeUrl(): string {
+  const hostname = window.location.hostname.toLowerCase();
+  // ✅ EN PRODUCTION : afri-hub.com
+  if (isProductionHost(hostname)) {
+    return `${window.location.protocol}//${hostname}/`;
+  }
+  // ✅ EN LOCAL : afri-hub.localhost:5173
+  return `http://afri-hub.localhost:5173`;
+}
+
 // ✅ DRAPEAUX EN IMAGE — fonctionne sur Windows, Mac, Linux, partout
 function Flag({ code, size = 48 }: { code: string; size?: number }) {
   const iso = code?.toLowerCase();
@@ -216,8 +242,17 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const hostname = window.location.hostname.toLowerCase();
-  const isRootHost = hostname === "afri-hub.localhost" || hostname === "localhost" || hostname === "127.0.0.1" || hostname === "afri-hub.com" || hostname === "www.afri-hub.com" || hostname.endsWith(".vercel.app");
-  const portSuffix = window.location.port ? `:${window.location.port}` : "";
+  const pathname = window.location.pathname;
+  const pathFirstSegment = pathname.split("/").filter(Boolean)[0]?.toLowerCase() || "";
+
+  // ✅ On est sur la page d'accueil (root) si :
+  // - On est en local sur afri-hub.localhost / localhost / 127.0.0.1 (sans sous-domaine pays)
+  // - OU on est en prod (afri-hub.com / vercel.app) ET le path ne contient pas un code pays valide
+  const isLocalRoot = hostname === "afri-hub.localhost" || hostname === "localhost" || hostname === "127.0.0.1";
+  const isProdHost = isProductionHost(hostname);
+  const validCountryCodes = Object.keys(CULTURE);
+  const hasCountryInPath = isProdHost && validCountryCodes.includes(pathFirstSegment);
+  const isRootHost = isLocalRoot || (isProdHost && !hasCountryInPath);
 
   useEffect(() => {
     if (authCountry) setCountry({ ...authCountry, flag: FLAG_MAP[authCountry.code?.toLowerCase()] || authCountry.flag || "🌍" });
@@ -321,7 +356,7 @@ function App() {
                     <>
                       {filtered.map(c => (
                         <button key={c.code}
-                          onClick={() => { window.location.href = `${window.location.protocol}//${c.code}.localhost${portSuffix}`; }}
+                          onClick={() => { window.location.href = buildCountryUrl(c.code); }}
                           className={`w-full group flex items-center gap-4 p-4 rounded-2xl border transition-all text-left ${isDark ? "border-white/5 bg-white/3 hover:bg-white/8 hover:border-amber-400/30" : "border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300"}`}>
                           <Flag code={c.code} size={48} />
                           <div className="flex-1 min-w-0">
@@ -401,7 +436,7 @@ function App() {
                   </div>
                 ))}
                 <button onClick={() => setShowWelcome(false)} className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-red-500 to-emerald-500 font-black text-white text-base hover:brightness-110 transition shadow-lg">Accéder à mon espace →</button>
-                <a href="http://afri-hub.localhost:5173" className={`block text-center text-xs transition ${isDark ? "text-slate-600 hover:text-slate-400" : "text-slate-400 hover:text-slate-600"}`}>← Changer de pays</a>
+                <a href={buildHomeUrl()} className={`block text-center text-xs transition ${isDark ? "text-slate-600 hover:text-slate-400" : "text-slate-400 hover:text-slate-600"}`}>← Changer de pays</a>
               </div>
             ) : (
               <div className="space-y-4">
@@ -416,7 +451,7 @@ function App() {
                   <AuthForm />
                 </div>
                 {culture && <button onClick={() => setShowWelcome(true)} className={`block w-full text-center text-xs transition ${isDark ? "text-slate-600 hover:text-amber-400" : "text-slate-400 hover:text-amber-600"}`}>← Retour à la présentation</button>}
-                <a href="http://afri-hub.localhost:5173" className={`block text-center text-xs transition ${isDark ? "text-slate-600 hover:text-slate-400" : "text-slate-400 hover:text-slate-600"}`}>← Changer de pays</a>
+                <a href={buildHomeUrl()} className={`block text-center text-xs transition ${isDark ? "text-slate-600 hover:text-slate-400" : "text-slate-400 hover:text-slate-600"}`}>← Changer de pays</a>
               </div>
             )}
           </main>
